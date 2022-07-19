@@ -24,4 +24,12 @@ app.listen(port, () => {
 Organization
 - By Sensor
 
+
+Order By
+- Latitude
+- Longitude
+- Time
+- Date
+-Type
+
 */
