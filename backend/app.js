@@ -7,32 +7,42 @@ const token = '_l7EyOTco3SkHzc5JJSI4XC8QMxx5Nf-diWE-he36qHeIb33OGz3hTaor5Tj388tB
 const org = 'test'
 const bucket = 'test'
 const client = new InfluxDB({url:'http://localhost:8086', token: token})
-
 const writeApi = client.getWriteApi(org, bucket)
-writeApi.useDefaultTags({host: 'host1'})
-
-const point = new Point('lightning')
-  .floatField('times striked', 1)
-  .floatField('distance from sensor (mi)', 50)
-writeApi.writePoint(point)
-
-writeApi
-    .close()
-    .then(() => {
-        console.log('FINISHED')
-    })
-    .catch(e => {
-        console.error(e)
-        console.log('Finished ERROR')
-    })
-
 const queryApi = client.getQueryApi(org)
+
+function createPoint(measurement, tags, time, fields) {
+  for (i in fields){
+    point = new Point(measurement)
+    console.log(i)
+    for (t in tags){
+      point.tag(t, String(tags[t]))
+      console.log(t)
+      console.log(tags[t])
+    }
+    point.floatField(i, fields[i])
+    console.log(fields[i])
+
+    writeApi.writePoint(point)
+    writeApi.close().then(() => {
+      console.log('Wrote point')
+    }).catch(e => {
+      console.error(e)
+      console.log('Encountered error')
+      console.log(e)
+    })
+  }
+}
+
+function queryPoints(){
+  
+}
 
 const query = `from(bucket: "test") |> range(start: -1m)`
 queryApi.queryRows(query, {
   next(row, tableMeta) {
     const o = tableMeta.toObject(row)
-    console.log(`${o._time} ${o._measurement} on ${o._tag}: ${o._field}=${o._value}`)
+    console.log(o)
+    //console.log(`${o._time} ${o._measurement} on : ${o._field}=${o._value}`)
   },
   error(error) {
     console.error(error)
@@ -43,7 +53,6 @@ queryApi.queryRows(query, {
   },
 })
 
-/*
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
