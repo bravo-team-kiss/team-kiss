@@ -1,16 +1,12 @@
-import "./App.css";
-import React, { useState } from "react";
+import "../App.css";
+import React from "react";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import Button from "@mui/material/Button";
 import { styled } from "@mui/material/styles";
-import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
-import Grid from "@mui/material/Grid";
-import Search from "./components/Search";
-import Display from "./components/Display";
 
-function App() {
+function Search() {
   const [value, setValue] = React.useState(null);
   const [time, setTime] = React.useState("");
 
@@ -40,22 +36,28 @@ function App() {
   ];
 
   return (
-    <div className="App-header">
-      <header>
-        <p>Welcome, Team Kiss.</p>
-      </header>
-      <body className="App-body">
-        <Grid container spacing={5}>
-          <Grid item xs={6}>
-            <Search />
-          </Grid>
-          <Grid item xs={6}>
-            <Display />
-          </Grid>
-        </Grid>
-      </body>
+    <div className="search-div">
+      <Autocomplete
+        className="input-fields"
+        id="combo-box-demo"
+        label="Source"
+        options={measurements}
+        onChange={(e) => setValue(e.target.value)}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Source" />}
+      />
+      <Autocomplete
+        className="input-fields"
+        options={timeOptions.map((option) => option.label)}
+        sx={{ width: 300 }}
+        onChange={(e) => setTime(e.target.value)}
+        renderInput={(params) => <TextField {...params} label="Times" />}
+      />
+      <Button className="button" variant="contained" size="large">
+        Download
+      </Button>
     </div>
   );
 }
 
-export default App;
+export default Search;
