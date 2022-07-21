@@ -1,13 +1,22 @@
+// Includes
 const express = require('express');
-const app = express();
-const port = 3000;
+const fileUpload = require('express-fileupload')
 const {InfluxDB, Point} = require('@influxdata/influxdb-client');
 const path = require('path');
+const fs = require('fs')
+const execSync = require("child_process").execSync
 
-const token = 'RfUEWB9Ww_7JaVZ_DYvYo3VPlTBqwQ8I_fpNDcRAn4GAeY-sbrLHOzVrBEKn8P4sQMT-83sObGudnAAriItlug=='
-const org = 'test'
-const bucket = 'test'
-const client = new InfluxDB({url:'http://localhost:8086', token: token})
+// Express Init
+const app = express();
+app.use(fileUpload())
+const port = 1337;
+
+// Influx DB init
+const token = process.env.TOKEN
+const org = process.env.ORG
+const bucket = process.env.BUCKET
+const client = new InfluxDB({url:'http://influx:8086', token: token})
+
 
 function createPoint(measurement, tags, time, fields) {
   const writeApi = client.getWriteApi(org, bucket)
@@ -34,142 +43,164 @@ function createPoint(measurement, tags, time, fields) {
   }
 }
 
-function queryPoints(mins){
-  const queryApi = client.getQueryApi(org)
-  const query = `from(bucket: "die") |> range(start: -${mins}m)`
+function getTags(influxRow) {
+  const tags = {};
 
-  queryApi.queryRows(query, {
-    next(row, tableMeta){
-      const o = tableMeta.toObject(row)
-      console.log(o)
-    },
-    error(e){
-      console.error(error)
-      console.log("Loading error")
-    },
-    complete(){
-      console.log("Loading success")
-    }
-  })
+  const tagKeys =
+    Object.keys(influxRow)
+      .filter(k => k[0] !== '_')
+      .filter(k => !['result', 'table'].includes(k));
+
+  for (const k of tagKeys) {
+    tags[k] = influxRow[k];
+  }
+
+  return tags;
 }
 
-/*
-const query = `from(bucket: ${bucket}) |> range(start: -1m)`
-queryApi.queryRows(query, {
-  next(row, tableMeta) {
-    const o = tableMeta.toObject(row)
-    console.log(o)
-    //console.log(`${o._time} ${o._measurement} on : ${o._field}=${o._value}`)
-  },
-  error(error) {
-    console.error(error)
-    console.log('Finished ERROR')
-  },
-  complete() {
-    console.log('Finished SUCCESS')
-  },
-})
-*/
+function buildKey(influxRow) {
+  const tagValues =
+    Object.keys(influxRow)
+      .filter(k => k[0] !== '_')
+      .filter(k => !['result', 'table'].includes(k))
+      .map(k => `${k}=${influxRow[k]}`)
+      .join('_');
+  return `${influxRow['_measurement']}_${tagValues}`;
+}
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname+'/sendata.html'));
-});
+function createJSON(output) {
+  let finalOut = [];
+  let current = undefined;
+  for (const influxRow of output) {
+    let time = influxRow['_time']
+    let key = buildKey(influxRow);
+
+    if (current) {
+      if (current.key !== key || current.time !== time) {
+        finalOut.push(current);
+        current = {
+          time,
+          key,
+          values: {},
+          tags: getTags(influxRow)
+        }
+      }
+    } else {
+      current = {
+        time,
+        key,
+        values: {},
+        tags: getTags(influxRow)
+      }
+    }
+
+    current.values[influxRow['_field']] = influxRow['_value'];
+  }
+
+  finalOut.push(current)
+  console.log(finalOut)
+
+  return finalOut;
+}
 
 app.get('/requestdata', (req, res) => {
-  const minutes = req.query.mins;
-  const measurement = req.query.measurement;
+  const days = req.query.days;
+  const measurement = req.query.sensor;
 
-  const queryApi = client.getQueryApi(org)
+  if(days && measurement){
+    const queryApi = client.getQueryApi(org)
 
-  const query = `from(bucket: "${bucket}") 
-  |> range(start: -1d)
-  |>`
+    const query = `from(bucket: "${bucket}") 
+    |> range(start: 0)
+    |> filter(fn: (r) => r._measurement == "${measurement}")`
 
-  let o = [];
+    let o = [];
 
-  queryApi.queryRows(query, {
-    next(row, tableMeta){
-      let newRow = tableMeta.toObject(row)
-      console.log(o)
-      o.push(newRow)
-    },
-    error(e){
-      console.error(e)
-      console.log("Loading error")
-    },
-    complete(){
-      console.log("Loading success")
-      res.send(o)
-    }
-  })
+    queryApi.queryRows(query, {
+      next(row, tableMeta){
+        let newRow = tableMeta.toObject(row)
+        o.push(newRow)
+      },
+      error(e){
+        console.error(e)
+        console.log("Query error")
+      },
+      complete(){
+        console.log("Query success")
+        if (o[0] === undefined)
+        {
+          res.status(500).send("Failed display measurements for given time or sensor")
+        }
+        else{
+          res.status(200).send(createJSON(o))
+        }
+      }
+    })
+  }
+  else{
+    res.status(500).send("Days or Sensor Measurement incorrect");
+  }
 });
 
-app.get('/sendata', (req, res) => {
-  const measurement = req.query.measurement;
-  const tag1 = req.query.tag1;
-  const tag2 = req.query.tag2;
-  const time = req.query.time;
-  const attr = req.query.attr;
-  const value = req.query.value;
+app.post('/upload', (req, res) => {
+  let sampleFile;
+  let uploadPath;
+  let tmpDir;
+  const tag = req.query.format;
 
-  /*
-  psuedo
-
-  for every attribute
-    create a key + value pair
-
-  for every field
-    create a key + value pair
-  */
-
-  let tags = {};
-  tags[tag1] = tag2;
-
-  console.log(tags);
-
-  let fields = {};
-  fields[attr] = value;
-
-  console.log(fields)
-
-  res.send({
-    measurement,
-    tag1,
-    tag2,
-    time,
-    attr,
-    value,
-    tags,
-    fields
-  })
-  if(!createPoint(measurement, tags, Date.now(), fields))
+  if(!tag)
   {
-    res.send('<h1>Data push failed</h1>');
-    res.status(400);
+    return res.status(400).send("No format set")
   }
-  res.send('<h2>Sent info to database</h2>');
+
+  if(!req.files || Object.keys(req.files).length === 0){
+    return res.status(400).send('No files uploaded')
+  }
+
+  try{
+    tmpDir = fs.mkdtempSync("/tmp/")
+    sampleFile = req.files.file
+    uploadPath = tmpDir + "/" + sampleFile.name
+
+    sampleFile.mv(uploadPath, function(err) {
+      if (err){
+        return res.status(500).send(err)
+      }
+      console.log(tmpDir)
+      console.log(sampleFile.name)
+      const result = execSync(`docker run -v ${tmpDir}/:/tmp/ -e TOKEN_INFLUX registry:8087/${tag} influx /tmp/${sampleFile.name}`)
+      console.log(result.toString("utf-8"))
+
+      if(tmpDir+"/"){
+        res.send(`${sampleFile.name} successfully uploaded!`)
+        fs.rmSync(tmpDir+"/", { recursive : true })
+      }
+    })
+  }
+  catch (err){
+    console.error(err)
+  }
 });
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
 
-/* Data that will most likely be found in sets
+/*
 
-Organization
-- By Sensor
-
-
-Order By
-- Latitude
-- Longitude
-- Time
-- Date
--Type
-
-1 bucket, measurement = type of sensor, field = attr of sensor
-
+For Front end
+===============
 Drop down: sensor
+Drop down: # of days (1, 5, 10, 30, 45...)
 Drop down: sample period (x data point per hour)
+Drop down: type of data
+
+For back end
+===============
+1. Detect file *
+2. Create file in temp *
+3. Run the correct docker image, then remove after completion {Tags: 915-s, lightning, profiler, rawinsonde, winds_towers}
+4. Determine if docker did it's job
+5. Redirect to /requestdata = Query Influx
 
 */
