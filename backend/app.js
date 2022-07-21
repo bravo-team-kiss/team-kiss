@@ -82,7 +82,8 @@ app.get('/requestdata', (req, res) => {
   const queryApi = client.getQueryApi(org)
 
   const query = `from(bucket: "${bucket}") 
-  |> range(start: 0)`
+  |> range(start: -1d)
+  |>`
 
   let o = [];
 
@@ -167,5 +168,8 @@ Order By
 -Type
 
 1 bucket, measurement = type of sensor, field = attr of sensor
+
+Drop down: sensor
+Drop down: sample period (x data point per hour)
 
 */
