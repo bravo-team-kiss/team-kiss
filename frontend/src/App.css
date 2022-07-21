@@ -59,8 +59,8 @@
 }
 
 .data-textField {
-  padding: 5%;
-  width: max-content;
+  color: aqua;
+  background-color: red;
 }
 
 @keyframes App-logo-spin {

@@ -7,6 +7,7 @@ function Display() {
     <div className="display-div">
       <TextField
         className="data-textField"
+        fullWidth
         disabled
         id="filled-disabled"
         defaultValue="206 Partial Content (RFC 7233)
