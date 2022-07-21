@@ -2,19 +2,32 @@
 const express = require('express');
 const fileUpload = require('express-fileupload')
 const {InfluxDB, Point} = require('@influxdata/influxdb-client');
-const path = require('path');
 const fs = require('fs')
 const execSync = require("child_process").execSync
 
-// Express Init
-const app = express();
-app.use(fileUpload())
-const port = 1337;
+const port = process.env.PORT ?? 1337;
 
-// Influx DB init
-const token = process.env.TOKEN
 const org = process.env.ORG
 const bucket = process.env.BUCKET
+const token = process.env.INFLUX_TOKEN
+
+if (!org) {
+  console.error('Missing environment variable: ORG');
+  process.exit(1);
+}
+if (!bucket) {
+  console.error('Missing environment variable: BUCKET');
+  process.exit(1);
+}
+if (!token) {
+  console.error('Missing environment variable: INFLUX_TOKEN');
+  process.exit(1);
+}
+// Express Init
+const app = express();
+app.use(fileUpload());
+
+// Influx DB init
 const client = new InfluxDB({url:'http://influx:8086', token: token})
 
 
@@ -168,7 +181,7 @@ app.post('/upload', (req, res) => {
       }
       console.log(tmpDir)
       console.log(sampleFile.name)
-      const result = execSync(`docker run -v ${tmpDir}/:/tmp/ -e TOKEN_INFLUX registry:8087/${tag} influx /tmp/${sampleFile.name}`)
+      const result = execSync(`docker run -v ${tmpDir}/:/tmp/ -e INFLUX_TOKEN registry:8087/${tag} influx /tmp/${sampleFile.name}`)
       console.log(result.toString("utf-8"))
 
       if(tmpDir+"/"){
@@ -181,6 +194,8 @@ app.post('/upload', (req, res) => {
     console.error(err)
   }
 });
+
+app.use(express.static('../frontend/build'));
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
