@@ -1,0 +1,11 @@
+function Homepage() {
+  return (
+    <main>
+      <div>
+        <h1>Hi</h1>
+      </div>
+    </main>
+  );
+}
+
+export default Homepage;
