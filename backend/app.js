@@ -2,15 +2,16 @@ const express = require('express');
 const app = express();
 const port = 3000;
 const {InfluxDB, Point} = require('@influxdata/influxdb-client');
+const path = require('path');
 
-const token = '_l7EyOTco3SkHzc5JJSI4XC8QMxx5Nf-diWE-he36qHeIb33OGz3hTaor5Tj388tBTQp9B48ta9pfJAyjCFGcg=='
+const token = 'RfUEWB9Ww_7JaVZ_DYvYo3VPlTBqwQ8I_fpNDcRAn4GAeY-sbrLHOzVrBEKn8P4sQMT-83sObGudnAAriItlug=='
 const org = 'test'
 const bucket = 'test'
 const client = new InfluxDB({url:'http://localhost:8086', token: token})
-const writeApi = client.getWriteApi(org, bucket)
-const queryApi = client.getQueryApi(org)
 
 function createPoint(measurement, tags, time, fields) {
+  const writeApi = client.getWriteApi(org, bucket)
+
   for (i in fields){
     point = new Point(measurement)
     console.log(i)
@@ -33,11 +34,27 @@ function createPoint(measurement, tags, time, fields) {
   }
 }
 
-function queryPoints(){
-  
+function queryPoints(mins){
+  const queryApi = client.getQueryApi(org)
+  const query = `from(bucket: "die") |> range(start: -${mins}m)`
+
+  queryApi.queryRows(query, {
+    next(row, tableMeta){
+      const o = tableMeta.toObject(row)
+      console.log(o)
+    },
+    error(e){
+      console.error(error)
+      console.log("Loading error")
+    },
+    complete(){
+      console.log("Loading success")
+    }
+  })
 }
 
-const query = `from(bucket: "test") |> range(start: -1m)`
+/*
+const query = `from(bucket: ${bucket}) |> range(start: -1m)`
 queryApi.queryRows(query, {
   next(row, tableMeta) {
     const o = tableMeta.toObject(row)
@@ -52,20 +69,86 @@ queryApi.queryRows(query, {
     console.log('Finished SUCCESS')
   },
 })
+*/
 
 app.get('/', (req, res) => {
-  res.send('Hello World!');
+  res.sendFile(path.join(__dirname+'/sendata.html'));
 });
 
-app.post('/requestdata', (req, res) => {
-  const from_date = req.query.from;
-  const to_date = req.query.to;
+app.get('/requestdata', (req, res) => {
+  const minutes = req.query.mins;
+  const measurement = req.query.measurement;
+
+  const queryApi = client.getQueryApi(org)
+
+  const query = `from(bucket: "${bucket}") 
+  |> range(start: 0)`
+
+  let o = [];
+
+  queryApi.queryRows(query, {
+    next(row, tableMeta){
+      let newRow = tableMeta.toObject(row)
+      console.log(o)
+      o.push(newRow)
+    },
+    error(e){
+      console.error(e)
+      console.log("Loading error")
+    },
+    complete(){
+      console.log("Loading success")
+      res.send(o)
+    }
+  })
+});
+
+app.get('/sendata', (req, res) => {
+  const measurement = req.query.measurement;
+  const tag1 = req.query.tag1;
+  const tag2 = req.query.tag2;
+  const time = req.query.time;
+  const attr = req.query.attr;
+  const value = req.query.value;
+
+  /*
+  psuedo
+
+  for every attribute
+    create a key + value pair
+
+  for every field
+    create a key + value pair
+  */
+
+  let tags = {};
+  tags[tag1] = tag2;
+
+  console.log(tags);
+
+  let fields = {};
+  fields[attr] = value;
+
+  console.log(fields)
 
   res.send({
-    'from date': from_date,
-    'to date': to_date,
-  });
+    measurement,
+    tag1,
+    tag2,
+    time,
+    attr,
+    value,
+    tags,
+    fields
+  })
+  if(!createPoint(measurement, tags, Date.now(), fields))
+  {
+    res.send('<h1>Data push failed</h1>');
+    res.status(400);
+  }
+  res.send('<h2>Sent info to database</h2>');
 });
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
