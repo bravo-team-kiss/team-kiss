@@ -6,17 +6,12 @@ import Button from "@mui/material/Button";
 import { styled } from "@mui/material/styles";
 import Paper from "@mui/material/Paper";
 
-function Search() {
+function Search(props) {
   const [value, setValue] = React.useState(null);
   const [time, setTime] = React.useState("");
 
-  const Item = styled(Paper)(({ theme }) => ({
-    backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
-    ...theme.typography.body2,
-    padding: theme.spacing(1),
-    textAlign: "center",
-    color: theme.palette.text.secondary,
-  }));
+  console.log(props);
+  let { getData } = props;
 
   const measurements = [
     "Winds Towers",
@@ -34,6 +29,17 @@ function Search() {
     { label: "Past 60d", value: 60 },
     { label: "Past 1y", value: 365 },
   ];
+
+  function handleClick(e) {
+    e.preventDefault();
+
+    fetch("/requestdata?days=30&sensor=lightning", {
+      method: "GET",
+    }).then((response) => {
+      let data = response.json();
+      getData(data);
+    });
+  }
 
   return (
     <div className="search-div">
@@ -53,7 +59,12 @@ function Search() {
         onChange={(e) => setTime(e.target.value)}
         renderInput={(params) => <TextField {...params} label="Times" />}
       />
-      <Button className="button" variant="contained" size="large">
+      <Button
+        onClick={(e) => handleClick(e)}
+        className="button"
+        variant="contained"
+        size="large"
+      >
         Download
       </Button>
     </div>
