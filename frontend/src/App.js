@@ -12,7 +12,7 @@ function App() {
   // };
   return (
     <div className="App-header">
-      <p>Welcome, Team Kiss.</p>
+      <p className="title">TEAM KISS</p>
       <Grid container spacing={5} className="grid-container">
         <Grid item xs={6}>
           <Search setParentData={setData} />

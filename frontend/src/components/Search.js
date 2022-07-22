@@ -43,6 +43,7 @@ function Search(props) {
 
   return (
     <div className="search-div">
+      <p>Retrieve weather data</p>
       <Autocomplete
         className="input-fields"
         id="combo-box-demo"
@@ -64,6 +65,7 @@ function Search(props) {
         className="button"
         variant="contained"
         size="large"
+        sx={{ background: "#3D5A73" }}
       >
         Download
       </Button>

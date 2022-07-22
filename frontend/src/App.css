@@ -1,16 +1,11 @@
 .App {
   text-align: center;
+  max-height: 100%;
 }
 
 .App-logo {
   height: 40vmin;
   pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
 }
 
 .App-header {
@@ -27,7 +22,10 @@
 .input-fields {
   width: 100%;
   background-color: #f4f1f1;
-  margin-bottom: 10%;
+  margin-bottom: 5%;
+  align-items: stretch;
+  border-radius: 4px;
+  border-style: line;
 }
 
 .search-div {
@@ -38,8 +36,8 @@
 }
 
 .button {
-  padding: 60%;
-  width: 65%;
+  width: 25%;
+  border-radius: 5px;
 }
 
 .display-div {
@@ -47,15 +45,19 @@
   display: flex;
   align-items: stretch;
   justify-content: center;
-  padding-right: 2em;
+  padding-right: 4em;
   height: 100%;
 }
 
 .data-textField {
-  background-color: #f4f1f1;
+  background: #f4f1f1;
   border: 1px solid;
   height: 100%;
   overflow: auto;
+  margin-bottom: 3em;
+  border-style: line;
+  border-color: grey;
+  border-radius: 5px;
 }
 
 .grid-container {
@@ -65,11 +67,9 @@
 .display-container {
   height: 100%;
 }
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+
+.title {
+  font-size: 4.3rem;
+  font-weight: bold;
+  text-shadow: 3px 3px #a9d9d0;
 }
