@@ -17,26 +17,17 @@
   background-color: #282c34;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-body {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
   text-align: center;
+  min-height: 100%;
 }
 
 .input-fields {
-  margin: 5%;
   width: 100%;
-  background-color: white;
+  background-color: #f4f1f1;
+  margin-bottom: 10%;
 }
 
 .search-div {
@@ -52,17 +43,28 @@
 }
 
 .display-div {
-  /* flex-direction: column;
+  flex-direction: column;
   display: flex;
-  align-items: center;
-  justify-content: center; */
+  align-items: stretch;
+  justify-content: center;
+  padding-right: 2em;
+  height: 100%;
 }
 
 .data-textField {
-  color: aqua;
-  background-color: red;
+  background-color: #f4f1f1;
+  border: 1px solid;
+  height: 100%;
+  overflow: auto;
 }
 
+.grid-container {
+  height: 80vh;
+}
+
+.display-container {
+  height: 100%;
+}
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
