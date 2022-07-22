@@ -48,7 +48,7 @@ function Upload() {
   return (
     <div>
         <form onSubmit={handleSubmit}>
-          <h1>Upload data</h1>
+          <p>Upload data</p>
           <Select
                 className="input-fields"
                 id="combo-box-demo"
