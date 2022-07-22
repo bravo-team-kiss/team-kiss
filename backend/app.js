@@ -117,6 +117,38 @@ function createJSON(output) {
   return finalOut;
 }
 
+app.get('/sensors', (req, res) => {
+  const queryApi = client.getQueryApi(org);
+
+  const query =
+    `import "influxdata/influxdb/schema"
+    schema.measurements(bucket: "sensordata")`;
+
+  const results = [];
+
+  queryApi.queryRows(query, {
+    next(row, tableMeta){
+      let newRow = tableMeta.toObject(row)
+      results.push(newRow)
+    },
+    error(e){
+      console.error(e)
+      console.log("Query error")
+      res.status(500).send(e.toString())
+    },
+    complete(){
+      console.log("Query success")
+      if (results[0] === undefined)
+      {
+        res.status(400).send("Failed display measurements for given time or sensor")
+      }
+      else{
+        res.status(200).send(JSON.stringify(results, null, '  '))
+      }
+    }
+  })
+});
+
 app.get('/requestdata', (req, res) => {
   const days = req.query.days;
   const measurement = req.query.sensor;
