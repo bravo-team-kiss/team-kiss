@@ -5,6 +5,7 @@ const {InfluxDB, Point} = require('@influxdata/influxdb-client');
 const fs = require('fs')
 const execSync = require("child_process").execSync
 const http = require('http');
+const proxy = require('http-proxy');
 
 const port = process.env.PORT ?? 1337;
 const dockerNetwork = process.env.NETWORK ?? 'shared-services-net';
@@ -261,7 +262,14 @@ app.post('/upload', (req, res) => {
   }
 });
 
-app.use(express.static('../frontend/build'));
+if (process.env.DEV_SERVER) {
+  const proxyServer = proxy.createProxyServer();
+  app.use('/', (req, res) => {
+    proxyServer.web(req, res, { target: process.env.DEV_SERVER});
+  });
+} else {
+  app.use(express.static('../frontend/build'));
+}
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);

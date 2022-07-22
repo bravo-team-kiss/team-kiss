@@ -18,7 +18,7 @@ function App() {
           <Search setParentData={setData} />
         </Grid>
         <Grid item xs={6} className="display-container">
-          <Display data={data} />
+          <Display data={JSON.stringify(data, undefined, '  ')} />
         </Grid>
       </Grid>
     </div>

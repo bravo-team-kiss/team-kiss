@@ -8,7 +8,11 @@ function Display(props) {
   return (
     <div className="display-div">
       <Box className="data-textField">
-        <p>{data}</p>
+        <code>
+          <pre className={"language-json"}>
+            {data}
+          </pre>
+        </code>
       </Box>
     </div>
   );
