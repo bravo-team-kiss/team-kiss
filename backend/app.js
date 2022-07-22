@@ -160,7 +160,7 @@ app.post('/upload', (req, res) => {
   let sampleFile;
   let uploadPath;
   let tmpDir;
-  const tag = req.query.format;
+  const tag = req.query.format?.toLowerCase();
 
   if(!tag)
   {
@@ -169,6 +169,8 @@ app.post('/upload', (req, res) => {
 
   if(!req.files || Object.keys(req.files).length === 0){
     return res.status(400).send('No files uploaded')
+  } else if (!req.files.file) {
+    return res.status(400).send('A file must be uploaded with the form data name \'file\'')
   }
 
   try{
