@@ -5,20 +5,22 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Button from "@mui/material/Button";
 import { styled } from "@mui/material/styles";
 import Paper from "@mui/material/Paper";
+import Select from "@mui/material/Select"
+import MenuItem from "@mui/material/MenuItem"
 
 function Search(props) {
-  const [value, setValue] = React.useState(null);
+  const [value, setValue] = React.useState("");
   const [time, setTime] = React.useState("");
 
   console.log(props);
   let { setParentData } = props;
 
   const measurements = [
-    "Winds Towers",
-    "Lightning",
-    "Profiler",
-    "Rawinsonde",
-    "915-S",
+    { label: "Winds Towers", value: "winds_towers" },
+    { label: "Lightning", value: "lightning" },
+    { label: "Profiler", value: "profiler" },
+    { label: "Rawinsonde", value: "rawinsonde" },
+    { label: "915-S", value: "915-s"}
   ];
 
   const timeOptions = [
@@ -31,9 +33,11 @@ function Search(props) {
   ];
 
   function handleClick(e) {
+    setParentData()
+    
     e.preventDefault();
 
-    fetch("/requestdata?days=30&sensor=lightning", {
+    fetch(`/requestdata?days=${time}&sensor=${value}`, {
       method: "GET",
     }).then(async (response) => {
       let data = await response.json();
@@ -44,22 +48,28 @@ function Search(props) {
   return (
     <div className="search-div">
       <p>Retrieve weather data</p>
-      <Autocomplete
+      <Select
         className="input-fields"
         id="combo-box-demo"
         label="Source"
-        options={measurements}
         onChange={(e) => setValue(e.target.value)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="Source" />}
-      />
-      <Autocomplete
+      >
+        {measurements.map((measurement, index) =>
+          <MenuItem key={index} value={measurement.value}>{measurement.label}</MenuItem> 
+        )}
+      </Select>
+      <Select
         className="input-fields"
-        options={timeOptions.map((option) => option.label)}
         sx={{ width: 300 }}
         onChange={(e) => setTime(e.target.value)}
         renderInput={(params) => <TextField {...params} label="Times" />}
-      />
+      >
+        {timeOptions.map((time, index) => 
+          <MenuItem key={index} value={time.value}>{time.label}</MenuItem>
+        )} 
+      </Select>
       <Button
         onClick={(e) => handleClick(e)}
         className="button"
