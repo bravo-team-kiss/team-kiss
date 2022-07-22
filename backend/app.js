@@ -4,6 +4,7 @@ const fileUpload = require('express-fileupload')
 const {InfluxDB, Point} = require('@influxdata/influxdb-client');
 const fs = require('fs')
 const execSync = require("child_process").execSync
+const http = require('http');
 
 const port = process.env.PORT ?? 1337;
 const dockerNetwork = process.env.NETWORK ?? 'shared-services-net';
@@ -117,41 +118,69 @@ function createJSON(output) {
   return finalOut;
 }
 
-app.get('/sensors', (req, res) => {
-  const queryApi = client.getQueryApi(org);
+function listSensors() {
+  return new Promise((resolve, reject) => {
+    const queryApi = client.getQueryApi(org);
 
-  const query =
-    `import "influxdata/influxdb/schema"
-    schema.measurements(bucket: "sensordata")`;
+    const query =
+      `import "influxdata/influxdb/schema"
+      schema.measurements(bucket: "${bucket}")`;
 
-  const results = [];
+    const results = [];
 
-  queryApi.queryRows(query, {
-    next(row, tableMeta){
-      let newRow = tableMeta.toObject(row)
-      results.push(newRow)
-    },
-    error(e){
-      console.error(e)
-      console.log("Query error")
-      res.status(500).send(e.toString())
-    },
-    complete(){
-      console.log("Query success")
-      if (results[0] === undefined)
-      {
-        res.status(400).send("Failed display measurements for given time or sensor")
+    queryApi.queryRows(query, {
+      next(row, tableMeta){
+        let newRow = tableMeta.toObject(row)
+        results.push(newRow._value)
+      },
+      error(e){
+        reject(e);
+      },
+      complete(){
+        resolve(results)
       }
-      else{
-        res.status(200).send(JSON.stringify(results, null, '  '))
-      }
-    }
+    })
   })
+}
+
+app.get('/sensors', async (req, res) => {
+  try {
+    const results = await listSensors();
+    console.log("Query success")
+    if (results[0] === undefined)
+    {
+      res.status(400).send("Failed display measurements for given time or sensor")
+    }
+    else {
+      res.status(200).send(JSON.stringify(results, null, '  '))
+    }
+  } catch (e) {
+
+    console.error(e)
+    console.log("Query error")
+    res.status(500).send(e.toString())
+  }
 });
 
-app.get('/requestdata', (req, res) => {
+app.get('/requestdata', async (req, res) => {
   const days = req.query.days;
-  const measurement = req.query.sensor;
+  let measurement = req.query.sensor;
+
+  let allSensors = await listSensors();
+
+  let found = false;
+  for (const s of allSensors) {
+    if (s.toLowerCase() == measurement.toLowerCase()) {
+      measurement = s;
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    res.status(400).send(`Sensor not found: ${measurement}`);
+    return;
+  }
 
   if(days && measurement){
     const queryApi = client.getQueryApi(org)
