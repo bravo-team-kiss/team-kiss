@@ -11,7 +11,7 @@ function Search(props) {
   const [time, setTime] = React.useState("");
 
   console.log(props);
-  let { getData } = props;
+  let { setParentData } = props;
 
   const measurements = [
     "Winds Towers",
@@ -35,9 +35,9 @@ function Search(props) {
 
     fetch("/requestdata?days=30&sensor=lightning", {
       method: "GET",
-    }).then((response) => {
-      let data = response.json();
-      getData(data);
+    }).then(async (response) => {
+      let data = await response.json();
+      setParentData(data);
     });
   }
 

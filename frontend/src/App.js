@@ -5,17 +5,17 @@ import Search from "./components/Search";
 import Display from "./components/Display";
 
 function App() {
-  const [data, setData] = React.useState([]);
+  const [data, setData] = React.useState();
 
-  const getData = (data) => {
-    setData(data);
-  };
+  // const setParentData = (data) => {
+  //   setData(data);
+  // };
   return (
     <div className="App-header">
       <p>Welcome, Team Kiss.</p>
       <Grid container spacing={5} className="grid-container">
         <Grid item xs={6}>
-          <Search getData={getData} />
+          <Search setParentData={setData} />
         </Grid>
         <Grid item xs={6} className="display-container">
           <Display data={data} />
