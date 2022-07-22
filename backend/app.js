@@ -85,35 +85,30 @@ function buildKey(influxRow) {
 }
 
 function createJSON(output) {
-  let finalOut = [];
-  let current = undefined;
+  let groupby = {}
   for (const influxRow of output) {
     let time = influxRow['_time']
     let key = buildKey(influxRow);
+    let fullKey = `${time}_${key}`;
 
-    if (current) {
-      if (current.key !== key || current.time !== time) {
-        finalOut.push(current);
-        current = {
-          time,
-          key,
-          values: {},
-          tags: getTags(influxRow)
-        }
-      }
-    } else {
+    let current = groupBy[fullKey]
+    if (!current) {
       current = {
         time,
         key,
         values: {},
         tags: getTags(influxRow)
-      }
+      };
+      groupBy[fullKey] = current;
     }
-
     current.values[influxRow['_field']] = influxRow['_value'];
   }
 
-  finalOut.push(current)
+  let finalOut = [];
+
+  for (const key of Object.keys(groupBy)){
+    finalOut.push(groupBy[key])
+  }
   console.log(finalOut)
 
   return finalOut;
