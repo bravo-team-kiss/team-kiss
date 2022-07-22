@@ -6,6 +6,7 @@ const fs = require('fs')
 const execSync = require("child_process").execSync
 
 const port = process.env.PORT ?? 1337;
+const dockerNetwork = process.env.NETWORK ?? 'shared-services-net';
 
 const org = process.env.ORG
 const bucket = process.env.BUCKET
@@ -181,7 +182,7 @@ app.post('/upload', (req, res) => {
       }
       console.log(tmpDir)
       console.log(sampleFile.name)
-      const result = execSync(`docker run -v ${tmpDir}/:/tmp/ -e INFLUX_TOKEN registry:8087/${tag} influx /tmp/${sampleFile.name}`)
+      const result = execSync(`docker run --network ${dockerNetwork} -v ${tmpDir}/:/tmp/input -e INFLUX_TOKEN registry:8087/${tag} influx /tmp/input/${sampleFile.name}`)
       console.log(result.toString("utf-8"))
 
       if(tmpDir+"/"){
@@ -192,6 +193,7 @@ app.post('/upload', (req, res) => {
   }
   catch (err){
     console.error(err)
+    res.status(500).send(err.toString());
   }
 });
 
