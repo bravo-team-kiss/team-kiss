@@ -143,7 +143,7 @@ app.get('/requestdata', (req, res) => {
         console.log("Query success")
         if (o[0] === undefined)
         {
-          res.status(500).send("Failed display measurements for given time or sensor")
+          res.status(400).send("Failed display measurements for given time or sensor")
         }
         else{
           res.status(200).send(createJSON(o))
@@ -152,7 +152,7 @@ app.get('/requestdata', (req, res) => {
     })
   }
   else{
-    res.status(500).send("Days or Sensor Measurement incorrect");
+    res.status(400).send("Days or Sensor Measurement incorrect");
   }
 });
 
@@ -184,8 +184,9 @@ app.post('/upload', (req, res) => {
       }
       console.log(tmpDir)
       console.log(sampleFile.name)
-      const result = execSync(`docker run --network ${dockerNetwork} -v ${tmpDir}/:/tmp/input -e INFLUX_TOKEN registry:8087/${tag} influx /tmp/input/${sampleFile.name}`)
-      console.log(result.toString("utf-8"))
+      console.log("Starting docker process")
+      const result = execSync(`docker run --network ${dockerNetwork} -v ${tmpDir}/:/tmp/input -e INFLUX_TOKEN registry:8087/${tag} influx /tmp/input/${sampleFile.name}`, { stdio : 'ignore' })
+      console.log("Docker process finished")
 
       if(tmpDir+"/"){
         res.send(`${sampleFile.name} successfully uploaded!`)
